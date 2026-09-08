@@ -6,6 +6,7 @@ from .models import Product
 from .serializers import ProductSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter
+from django.db.models import Q
 
 
 class ProductListCreateAPIView(APIView):
@@ -13,11 +14,13 @@ class ProductListCreateAPIView(APIView):
     def get(self,request):
 
         products=Product.objects.all()
-        filterset=ProductFilter(
-            request.GET,
-            queryset=products
-        )
-        products=filterset.qs
+        search=request.GET.get("search")
+        if search:
+            products=products.filter(
+                Q(name__icontains=search)|
+                Q(description__icontains=search)|
+                Q(category__icontains=search)
+            )
 
         serializer=ProductSerializer(
             products,
@@ -94,3 +97,43 @@ class ProductDetailAPIView(APIView):
         return Response(
             status=status.HTTP_204_NO_CONTENT
         )
+
+
+# NOTES
+# Filter vs Search
+# Filter	Search
+# Exact field/value based	Text matching
+# ?category=electronics	?search=iphone
+# Specific field	Multiple fields
+# Category/status/owner	name/description/category etc.
+# Q object use karenge
+# mportant part:
+# Q(name__icontains=search)
+
+# means:
+
+# product ke name mein search text hai ya nahi.
+
+# icontains ka i means case-insensitive.
+
+# So:
+
+# iphone
+# iPhone
+# IPHONE
+# IPhone
+
+# sab match karenge.
+
+# | ka meaning
+# Q(name__icontains=search) |
+# Q(description__icontains=search) |
+# Q(category__icontains=search)
+
+# means:
+
+# name contains search
+#        OR
+# description contains search
+#        OR
+# category contains search
