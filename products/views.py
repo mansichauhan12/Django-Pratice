@@ -22,6 +22,11 @@ class ProductListCreateAPIView(APIView):
                 Q(category__icontains=search)
             )
 
+        ordering=request.GET.get("ordering")
+        if ordering:
+            print("ORDERING VALUE:", ordering)
+            products=products.order_by(ordering)
+
         serializer=ProductSerializer(
             products,
             many=True
@@ -99,41 +104,14 @@ class ProductDetailAPIView(APIView):
         )
 
 
-# NOTES
-# Filter vs Search
-# Filter	Search
-# Exact field/value based	Text matching
-# ?category=electronics	?search=iphone
-# Specific field	Multiple fields
-# Category/status/owner	name/description/category etc.
-# Q object use karenge
-# mportant part:
-# Q(name__icontains=search)
 
-# means:
 
-# product ke name mein search text hai ya nahi.
+# - ka meaning
 
-# icontains ka i means case-insensitive.
+# Django ORM mein:
 
-# So:
+# Product.objects.all().order_by("price")
 
-# iphone
-# iPhone
-# IPHONE
-# IPhone
+# means ascending.
 
-# sab match karenge.
-
-# | ka meaning
-# Q(name__icontains=search) |
-# Q(description__icontains=search) |
-# Q(category__icontains=search)
-
-# means:
-
-# name contains search
-#        OR
-# description contains search
-#        OR
-# category contains search
+# Product.objects.all().order_by("-price")
