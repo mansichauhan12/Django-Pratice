@@ -4,12 +4,20 @@ from rest_framework import status
 
 from .models import Product
 from .serializers import ProductSerializer
+from django_filters.rest_framework import DjangoFilterBackend
+from .filters import ProductFilter
 
 
 class ProductListCreateAPIView(APIView):
 
     def get(self,request):
+
         products=Product.objects.all()
+        filterset=ProductFilter(
+            request.GET,
+            queryset=products
+        )
+        products=filterset.qs
 
         serializer=ProductSerializer(
             products,
