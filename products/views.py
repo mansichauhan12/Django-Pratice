@@ -7,6 +7,7 @@ from .serializers import ProductSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter
 from django.db.models import Q
+from rest_framework.pagination import PageNumberPagination
 
 
 class ProductListCreateAPIView(APIView):
@@ -27,12 +28,23 @@ class ProductListCreateAPIView(APIView):
             print("ORDERING VALUE:", ordering)
             products=products.order_by(ordering)
 
-        serializer=ProductSerializer(
+        # pagination
+        paginator=PageNumberPagination()
+        paginator.page_size=2
+
+        result_page=paginator.paginate_queryset(
             products,
+            request
+        )
+
+        serializer=ProductSerializer(
+            result_page,
             many=True
         )
 
-        return Response(serializer.data)
+        return paginator.get_paginated_response(
+            serializer.data
+        )
 
     def post(self,request):
 
@@ -106,12 +118,3 @@ class ProductDetailAPIView(APIView):
 
 
 
-# - ka meaning
-
-# Django ORM mein:
-
-# Product.objects.all().order_by("price")
-
-# means ascending.
-
-# Product.objects.all().order_by("-price")
