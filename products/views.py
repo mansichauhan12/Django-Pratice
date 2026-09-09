@@ -19,7 +19,8 @@ class ProductListCreateAPIView(APIView):
 
     def get(self,request):
 
-        products=Product.objects.all()
+     
+        products=Product.objects.filter(is_deleted=False)
         search=request.GET.get("search")
         if search:
             products=products.filter(
@@ -69,7 +70,8 @@ class ProductDetailAPIView(APIView):
 
     def get(self,request,pk):
 
-        product=Product.objects.get(pk=pk)
+      
+        product=Product.objects.get(pk=pk,is_deleted=False)
         serializer=ProductSerializer(product)
         return  Response(serializer.data)
     
@@ -109,12 +111,32 @@ class ProductDetailAPIView(APIView):
         )
     
     def delete(self,request,pk):
-        product=Product.objects.get(pk=pk)
-        product.delete()
+        product=Product.objects.get(pk=pk,is_deleted=False)
+        product.is_deleted=True
+        product.save()
+      
         return Response(
             status=status.HTTP_204_NO_CONTENT
         )
 
 
+class ProductRestoreAPIView(APIView):
+    def post(self,request,pk):
+        product=Product.objects.get(
+            pk=pk,
+            is_deleted=True
+        )
+
+        product.is_deleted=False
+        product.save()
+        serializer=ProductSerializer(product)
+
+        return Response(
+            {
+                "message":"product is restored",
+                "product":serializer.data,
+            },
+            status=status.HTTP_200_OK
+        )
 
 
