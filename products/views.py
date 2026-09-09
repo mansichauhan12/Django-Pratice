@@ -7,8 +7,13 @@ from .serializers import ProductSerializer
 from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter
 from django.db.models import Q
-from rest_framework.pagination import PageNumberPagination
+from rest_framework.pagination import CursorPagination
 
+
+
+class ProductCursorPagination(CursorPagination):
+    page_size=2
+    ordering="id"
 
 class ProductListCreateAPIView(APIView):
 
@@ -23,14 +28,9 @@ class ProductListCreateAPIView(APIView):
                 Q(category__icontains=search)
             )
 
-        ordering=request.GET.get("ordering")
-        if ordering:
-            print("ORDERING VALUE:", ordering)
-            products=products.order_by(ordering)
 
         # pagination
-        paginator=PageNumberPagination()
-        paginator.page_size=2
+        paginator=ProductCursorPagination()
 
         result_page=paginator.paginate_queryset(
             products,
