@@ -8,6 +8,7 @@ from django_filters.rest_framework import DjangoFilterBackend
 from .filters import ProductFilter
 from django.db.models import Q
 from rest_framework.pagination import CursorPagination
+from django.shortcuts import get_object_or_404
 
 
 
@@ -53,17 +54,12 @@ class ProductListCreateAPIView(APIView):
             data=request.data
         )
 
-        if serializer.is_valid():
-            serializer.save()
-
-            return Response(
-                serializer.data,
-                status=status.HTTP_201_CREATED
-            )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
 
         return Response(
-            serializer.errors,
-            status=status.HTTP_400_BAD_REQUEST
+            serializer.data,
+            status=status.HTTP_201_CREATED
         )
 
 class ProductDetailAPIView(APIView):
@@ -71,24 +67,25 @@ class ProductDetailAPIView(APIView):
     def get(self,request,pk):
 
       
-        product=Product.objects.get(pk=pk,is_deleted=False)
+        product=get_object_or_404(Product,pk=pk,is_deleted=False)
         serializer=ProductSerializer(product)
         return  Response(serializer.data)
     
-    # def put(self,request,pk):
-    #     product=Product.objects.get(pk=pk)
-    #     serializer=ProductSerializer(
-    #         product,
-    #         data=request.data
-    #     )
-
-    #     if serializer.is_valid():
-    #         serializer.save()
+   
+    # def get(self,request,pk):
+    #     try:
+    #         product=Product.objects.get(
+    #             pk=pk,
+    #             is_deleted=False
+    #         )
+    #         serializer=ProductSerializer(product)
     #         return Response(serializer.data)
-
+    #     except Product.DoesNotExist:
     #         return Response(
-    #             serializer.errors,
-    #             status=status.HTTP_400_BAD_REQUEST
+    #             {
+    #                 "message":"product not found"
+    #             },
+    #             status=status.HTTP_404_NOT_FOUND
     #         )
 
 

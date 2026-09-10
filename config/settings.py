@@ -42,10 +42,18 @@ INSTALLED_APPS = [
 ]
 
 REST_FRAMEWORK = {
+    "DEFAULT_EXCEPTION_HANDLER": "products.exceptions.custom_exception_handler",
     "DEFAULT_FILTER_BACKENDS": [
         "django_filters.rest_framework.DjangoFilterBackend",
     ],
 }
+# The important line is:
+
+# "DEFAULT_EXCEPTION_HANDLER": "products.exceptions.custom_exception_handler",
+
+# It tells DRF:
+
+# Whenever an API exception occurs, use my custom_exception_handler instead of DRF's default handler.
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
