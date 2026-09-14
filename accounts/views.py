@@ -3,6 +3,8 @@ from rest_framework.response import Response
 from rest_framework import status
 from .serializers import RegisterSerializer,LoginSerializer,  LogoutSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework.permissions import IsAuthenticated
+from rest_framework_simplejwt.token_blacklist.models import (OutstandingToken,BlacklistedToken)
 
 
 class RegisterAPIView(APIView):
@@ -72,6 +74,24 @@ class LogoutAPIView(APIView):
                 },
                 status=status.HTTP_200_OK
             )
+
+        
+class LogoutAllAPIView(APIView):
+    permission_classes=[IsAuthenticated]
+
+    def post(self,request):
+        tokens=OutstandingToken.objects.filter(user=request.user)
+        for token in tokens:
+            BlacklistedToken.objects.get_or_create(token=token)
+
+        return Response(
+            {
+                "message": "Logged out from all devices successfully" 
+            },
+            status=status.HTTP_200_OK
+        )
+            
+
 
 # POST /api/accounts/register/
 #             ↓
@@ -229,3 +249,27 @@ class LogoutAPIView(APIView):
 # Long-lived
 #    ↓
 # Must be invalidated during logout
+
+
+# Great 👍 Step 10 — Logout from All Devices
+
+# Now we need to solve a different problem.
+
+# Suppose the user logged in from:
+
+# Laptop  → Refresh Token A
+# Phone   → Refresh Token B
+# Tablet  → Refresh Token C
+
+# If they choose "Logout from all devices", all three refresh tokens should become invalid:
+
+# Refresh A → ❌
+# Refresh B → ❌
+# Refresh C → ❌
+# 10.1 How will we do it?
+
+# SimpleJWT's blacklist app keeps track of issued refresh tokens in:
+
+# OutstandingToken
+
+# So we'll find all outstanding tokens belonging to the current user and blacklist each one.
