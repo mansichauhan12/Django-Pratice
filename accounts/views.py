@@ -1,10 +1,14 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
-from .serializers import RegisterSerializer,LoginSerializer,  LogoutSerializer
+from .serializers import RegisterSerializer,LoginSerializer,  LogoutSerializer,ForgotPasswordSerializer,ResetPasswordSerializer
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.token_blacklist.models import (OutstandingToken,BlacklistedToken)
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.http import urlsafe_base64_encode
+from django.utils.encoding import force_bytes
+from .models import User
 
 
 class RegisterAPIView(APIView):
@@ -90,6 +94,50 @@ class LogoutAllAPIView(APIView):
             },
             status=status.HTTP_200_OK
         )
+
+class ForgotPasswordAPIView(APIView):
+    def post(self, request):
+        serializer = ForgotPasswordSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        email = serializer.validated_data["email"]
+        user=User.objects.filter(
+            email=email,
+            is_active=True
+        ).first()
+
+        if user:
+            uid=urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            print("UID:", uid)
+            print("TOKEN:", token)
+            return Response(
+            {
+                "message": (
+                    "If an account exists with this email, "
+                    "a password reset link has been sent."
+                )
+            },
+            status=status.HTTP_200_OK
+        )
+
+class ResetPasswordAPIView(APIView):
+    def post(self, request):
+      serializer=ResetPasswordSerializer(data=request.data)
+      serializer.is_valid(raise_exception=True)
+      user = serializer.validated_data["user"]
+      user.set_password(
+            serializer.validated_data["new_password"]
+        )
+      user.save()
+      return Response(
+            {
+                "message": "Password reset successful",
+            },
+            status=status.HTTP_200_OK
+        )
+      
+   
+
             
 
 
