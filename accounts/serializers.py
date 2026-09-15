@@ -81,7 +81,50 @@ class ResetPasswordSerializer(serializers.Serializer):
          data["user"] = user
          return data
   
-           
+
+
+class VerifyEmailSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+
+    def validate(self, data):
+        try:
+            uid = force_str(
+                urlsafe_base64_decode(data["uid"])
+            )
+
+            user = User.objects.get(pk=uid)
+
+        except (
+            TypeError,
+            ValueError,
+            OverflowError,
+            User.DoesNotExist
+        ):
+            raise serializers.ValidationError(
+                "Invalid verification link."
+            )
+
+        if user.is_email_verified:
+            raise serializers.ValidationError(
+                "Email is already verified."
+            )
+
+        if not default_token_generator.check_token(
+            user,
+            data["token"]
+        ):
+            raise serializers.ValidationError(
+                "Invalid or expired verification link."
+            )
+
+        data["user"] = user
+
+        return data
+
+        
+class ResendVerificationEmailSerializer(serializers.Serializer):
+    email = serializers.EmailField()
 
 # Yahan sabse important part:
 # User.objects.create_user(...)
